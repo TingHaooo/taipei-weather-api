@@ -8,7 +8,7 @@ const Weather = require("./modules/weather");
 
 const app = express();
 
-const port = 5000;
+const port = process.env.port || 8080;
 
 const connect = async () => {
   // Connect database
