@@ -3,6 +3,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const fetch = require("node-fetch");
+const schedule = require("node-schedule");
 const Weather = require("./modules/weather");
 
 const app = express();
@@ -66,8 +67,6 @@ const runApp = () => {
       [field, order] = sort.split(":");
     }
 
-    console.log(offset, limit, q, sort, field, order);
-
     const processQuery = {};
 
     if (q) {
@@ -111,6 +110,12 @@ const runApp = () => {
     };
 
     res.json(resJson);
+  });
+
+  // corn jobs，每一小時更新 db 資料
+  schedule.scheduleJob("0 * * * *", () => {
+    console.log("更新 weahter 資料");
+    fetchWeather();
   });
 
   // Listen on port 5000
