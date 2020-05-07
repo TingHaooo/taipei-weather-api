@@ -8,7 +8,7 @@
   ],
   "routes": [
     {
-      "src": "/tapei-weather",
+      "src": "/taipei-weather",
       "dest": "/index.js",
       "methods": [
         "GET"

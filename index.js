@@ -56,7 +56,7 @@ const runApp = () => {
     res.send("Welcome to a basic express App");
   });
 
-  app.get("/tapei-weather", async (req, res, next) => {
+  app.get("/taipei-weather", async (req, res, next) => {
     try {
       const {
         offset = "0", limit = "10", q, sort,
