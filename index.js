@@ -56,60 +56,70 @@ const runApp = () => {
     res.send("Welcome to a basic express App");
   });
 
-  app.get("/tapei-weather", async (req, res) => {
-    console.log(req.query);
-    const {
-      offset = "0", limit = "10", q, sort,
-    } = req.query;
-    let field;
-    let order;
-    if (sort) {
-      [field, order] = sort.split(":");
-    }
-
-    const processQuery = {};
-
-    if (q) {
-      processQuery.locationName = q;
-    }
-
-    const weathers = await Weather.paginate(
-      processQuery,
-      {
-        offset: parseInt(offset, 10),
-        limit: parseInt(limit, 10),
-        lean: true,
-        sort: { [field]: order === "ascend" ? 1 : -1 },
-      },
-    );
-
-    const results = weathers.docs.map((weather) => {
+  app.get("/tapei-weather", async (req, res, next) => {
+    try {
       const {
-        _id, dataTime, measures, locationName, value, geocode, location,
-      } = weather;
-      return {
-        _id,
-        dataTime: dataTime.toString(),
-        measures,
-        locationName,
-        value,
-        geocode,
-        lat: location.coordinates[0].toString(),
-        lon: location.coordinates[1].toString(),
+        offset = "0", limit = "10", q, sort,
+      } = req.query;
+      let field;
+      let order;
+      if (sort) {
+        [field, order] = sort.split(":");
+      }
+
+      const processQuery = {};
+
+      if (q) {
+        processQuery.locationName = q;
+      }
+
+      const weathers = await Weather.paginate(
+        processQuery,
+        {
+          offset: parseInt(offset, 10),
+          limit: parseInt(limit, 10),
+          lean: true,
+          sort: { [field]: order === "ascend" ? 1 : -1 },
+        },
+      );
+
+      const results = weathers.docs.map((weather) => {
+        const {
+          _id, dataTime, measures, locationName, value, geocode, location,
+        } = weather;
+        return {
+          _id,
+          dataTime: dataTime.toString(),
+          measures,
+          locationName,
+          value,
+          geocode,
+          lat: location.coordinates[0].toString(),
+          lon: location.coordinates[1].toString(),
+        };
+      });
+
+      const resJson = {
+        result: {
+          limit,
+          offset,
+          count: weathers.total.toString(),
+          sort,
+          results,
+        },
       };
-    });
 
-    const resJson = {
-      result: {
-        limit,
-        offset,
-        count: weathers.total.toString(),
-        sort,
-        results,
-      },
-    };
+      res.json(resJson);
+    } catch (e) {
+      next(e);
+    }
+  });
 
-    res.json(resJson);
+  app.use((err, req, res) => {
+    if (err) {
+      const { status = 500, message = "Something went wrong. Please try again." } = err;
+      res.status(status).send({ message, status });
+    }
   });
 
   // corn jobs，每一小時更新 db 資料
@@ -117,6 +127,7 @@ const runApp = () => {
     console.log("更新 weahter 資料");
     fetchWeather();
   });
+
 
   // Listen on port 5000
   app.listen(port, () => {
@@ -126,9 +137,13 @@ Visit http://localhost:5000`);
 };
 
 const main = async () => {
-  await connect();
-  await fetchWeather();
-  runApp();
+  try {
+    await connect();
+    await fetchWeather();
+    runApp();
+  } catch (e) {
+    console.log(e);
+  }
 };
 
 main();
